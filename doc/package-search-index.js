@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"CiampichettiTamburiTaras.OOPProject"},{"l":"CiampichettiTamburiTaras.OOPProject.Controller"},{"l":"CiampichettiTamburiTaras.OOPProject.Model"},{"l":"CiampichettiTamburiTaras.OOPProject.Model.Data"},{"l":"CiampichettiTamburiTaras.OOPProject.Utils"}];updateSearchResults();

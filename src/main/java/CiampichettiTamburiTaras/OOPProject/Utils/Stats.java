@@ -17,12 +17,23 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import CiampichettiTamburiTaras.OOPProject.Exceptions.noConfigFoundException;
 import CiampichettiTamburiTaras.OOPProject.Model.Classifica;
 import CiampichettiTamburiTaras.OOPProject.Model.Data.*;
 
+/*
+ * *Classe che fornisce le statistiche generali prese dalle API utilizzando dei metodi ausiliari in essa contenuti
+ * Le statistiche che fornisce sono: competizione con più squadre, competizione con meno squadre, numero minimo di squadre, numero massimo di squadre,
+ * durata media delle competizioni in giorni e media di stagioni salvate.
+ */
 public class Stats {
 
-	public int totAreas() {
+	private int totAreas;
+	/*
+	 * Metodo che prende il totale delle aree e lo ritorna per essere utilizzato
+	 * @return int con il totale delle aree
+	 */
+	public void totAreas() {
 		int areas = 0;
 		try {
 			URLConnection openConnection = new URL("https://api.football-data.org/v2/areas").openConnection();
@@ -50,11 +61,17 @@ public class Stats {
 			System.out.print(e);
 		}
 
-		return areas;
+		totAreas = areas;
 	}
 
+	/*
+	 * Metodo che leggendo i file di config contenuti nella directory del progetto, che contengono i dati delle competizioni a cui e'
+	 * possibile accedere con il piano base delle API, calcola numero massimo, minimo e medio delle squadre che vi partecipano
+	 * 
+	 * @return JSONObject contenente i dati richiesti
+	 */
 	@SuppressWarnings("unchecked")
-	public JSONObject maxMinAveSquads() {
+	public JSONObject maxMinAveSquads() throws noConfigFoundException {
 		JSONArray obj = null;
 		JSONObject output = new JSONObject();
 		String compMax = null;
@@ -62,6 +79,12 @@ public class Stats {
 		long totSquadre = 0;
 		long max = -1;
 		long min = 50;
+		
+		File conf1 = new File("config.json");
+		File conf2 = new File("config2.json");
+		
+		if (!conf1.exists() || !conf2.exists())
+			throw new noConfigFoundException("UNO DEI DUE FILE CONFIG NON E' PRESENTE!");
 
 		try {
 			String data = "";
@@ -156,9 +179,15 @@ public class Stats {
 		return output;
 	}
 
+	/*
+	 * Metodo che aggrega tutte le stats per le aree calcolate con i metodi precedenti
+	 * 
+	 * @return JSONObject contenente i dati del JSONObject di maxMinAveSquads aggiunti a quelli di aveDuration
+	 */
 	@SuppressWarnings("unchecked")
-	public JSONObject areaStats() {
-		JSONObject workingObj = new CompetitionAPI().getAllCompetitions();
+	public JSONObject areaStats() throws noConfigFoundException {
+		CompetitionAPI n = new CompetitionAPI();
+		JSONObject workingObj = n.getAllCompetitions();
 
 		JSONArray comp = (JSONArray) workingObj.get("competitions");
 		long totComp = (Long) workingObj.get("count");
@@ -182,14 +211,20 @@ public class Stats {
 		return toRet;
 	}
 	
+	/*
+	 * Metodo che calcola la media della durata delle competizioni usando i metodi della classe SimpleDateFormat e Date
+	 * 
+	 * @return int con la media della durata per le competizioni
+	 */
 	public int aveDuration() {
 		JSONObject obj = new CompetitionAPI().getAllCompetitions();
 		JSONArray competitions = (JSONArray) obj.get("competitions");
+		int count = ((Long) obj.get("count")).intValue();
 		long durataCampionato = 0;
 		long totDurate = 0;
 		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
 		try {
-			for (int i = 0; i < totAreas(); i++) {
+			for (int i = 0; i < count; i++) {
 				JSONObject singleComp = (JSONObject) competitions.get(i);
 				JSONObject curr = (JSONObject) singleComp.get("currentSeason");
 				Date startDate = dateFormat.parse(curr.get("startDate").toString());
@@ -203,7 +238,126 @@ public class Stats {
 			e.printStackTrace();
 		}
 		
-		int toRet = (int) totDurate / 153;
+		totAreas();
+		int appoggio = totAreas;
+		int toRet = (int) totDurate / count;
 		return toRet;
 	}
+	
+	public String getMAXorMinSquads(String filterType) throws noConfigFoundException {
+		JSONObject mMAobj = maxMinAveSquads();
+		
+		if (filterType.equals("MAX")) {
+			String toRet = mMAobj.get("MAXComp").toString() + mMAobj.get("MAXVal").toString();
+			return toRet;
+		}
+		
+		if (filterType.equals("min")) {
+			String toRet = mMAobj.get("minComp").toString() + mMAobj.get("minVal").toString();
+			return toRet;
+		}
+		
+		return "-1";
+	}
+	
+	/*
+	public JSONObject MAXOrMinForArea(String filterType) throws noConfigFoundException {
+		JSONArray obj = null;
+		JSONObject output = new JSONObject();
+		String compMax = null;
+		String compMin = null;
+		long totSquadre = 0;
+		long max = -1;
+		long min = 50;
+		
+		File conf1 = new File("config.json");
+		File conf2 = new File("config2.json");
+		
+		String appoggio = null;
+		
+		if (!conf1.exists() || !conf2.exists())
+			throw new noConfigFoundException("UNO DEI DUE FILE CONFIG NON E' PRESENTE!");
+		
+		try {
+			String data = "";
+			String line = "";
+			try {
+				BufferedReader buf = new BufferedReader(new FileReader("config.json"));
+				while ((line = buf.readLine() ) != null ) {
+					data += line;
+				}
+				buf.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			obj = (JSONArray) JSONValue.parseWithException(data);
+			
+			int numFromFile;
+			
+			for (int i = 0; i < obj.size(); i++) {
+				JSONObject camp = (JSONObject) obj.get(i);
+				String strValue = (String) camp.get("count");
+				numFromFile = Integer.valueOf(strValue);
+				
+				if (camp.get("area").toString() == appoggio)
+					totSquadre += numFromFile;
+				
+				if (numFromFile > max) {
+					max = numFromFile;
+					compMax = camp.get("competition").toString();
+				}
+				
+				if (numFromFile < min) {
+					min = numFromFile;
+					compMin = camp.get("competition").toString();
+				}
+			}
+			
+		}
+		catch (Exception e) {
+			System.out.print(e);
+		}
+		
+		try {
+			String data = "";
+			String line = "";
+			try {
+				BufferedReader buf = new BufferedReader(new FileReader("config.json"));
+				while ((line = buf.readLine() ) != null ) {
+					data += line;
+				}
+				buf.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+			obj = (JSONArray) JSONValue.parseWithException(data);
+			
+			int numFromFile;
+			
+			for (int i = 0; i < obj.size(); i++) {
+				JSONObject camp = (JSONObject) obj.get(i);
+				String strValue = (String) camp.get("count");
+				numFromFile = Integer.valueOf(strValue);
+				
+				if (camp.get("area").toString() == appoggio)
+					totSquadre += numFromFile;
+				
+				if (numFromFile > max) {
+					max = numFromFile;
+					compMax = camp.get("competition").toString();
+				}
+				
+				if (numFromFile < min) {
+					min = numFromFile;
+					compMin = camp.get("competition").toString();
+				}
+			}
+		}
+		catch (Exception e) {
+			System.out.print(e);
+		}
+	}
+	*/
 }

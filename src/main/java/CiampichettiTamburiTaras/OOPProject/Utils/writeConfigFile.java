@@ -12,10 +12,16 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+/*
+ * classe contenente i metodi per la creazione dei file di config, uno per le prime 6 squadre e l'altro per le altre 6
+ * Divise perchè con le limitazioni del piano base non si possono fare più di 10 chiamate al minuto
+ * 
+ */
+
 public class writeConfigFile {
 
-		private String[] idLegheAmmesse = {"CL", "PL", "SA", "BL1", "ELC", "PD"};
-		private String[] idLegheAmmesse2 = {"DED", "FL1", "WC", "EC", "BSA", "PPL"};
+		private String[] idLegheAmmesse = {"CL", "PL", "ELC", "PD", "WC", "EC"};
+		private String[] idLegheAmmesse2 = {"DED", "FL1", "SA", "BL1", "BSA", "PPL"};
 
 		private JSONArray confArray;
 		private JSONObject compObj;
@@ -29,8 +35,12 @@ public class writeConfigFile {
 			this.squadNameID = new JSONObject();
 		}
 		
+		/*
+		 * metodo che scrive il primo file di config, popolandolo con i dati delle squadre del primo array idLegheAmmesse
+		 */
+		
 		@SuppressWarnings("unchecked")
-		public void writeJSONconfig1() {
+		public String writeJSONconfig1() {
 			confArray = new JSONArray();
 			try {
 				for (String id: idLegheAmmesse) {
@@ -59,10 +69,12 @@ public class writeConfigFile {
 
 					JSONObject obj = (JSONObject) JSONValue.parseWithException(data);
 					
-				
 					JSONObject compData = (JSONObject) obj.get("competition");
+					JSONObject area = (JSONObject) obj.get("area");
+					String areaName = area.get("name").toString();
 					String comp = compData.get("name").toString();
 					String teams = obj.get("count").toString();
+					compObj.put("area", areaName);
 					compObj.put("count", teams);
 					compObj.put("competition", comp);
 					JSONArray squadre = (JSONArray) obj.get("teams");
@@ -77,6 +89,7 @@ public class writeConfigFile {
 					compObj.put("teams", squadsArray);
 					confArray.add(compObj);
 				}
+				
 			}
 			catch(Exception e) {
 				System.out.print(e);
@@ -88,10 +101,14 @@ public class writeConfigFile {
 	        } catch (IOException e) {
 	            e.printStackTrace();
 	        }
+			return confArray.toJSONString();
 		}
 		
+		/*
+		 * metodo analogo a writeJSONconfig1, solo con i dati dell'array idLegheAmmesse2
+		 */
 		@SuppressWarnings("unchecked")
-		public void writeJSONconfig2() {
+		public String writeJSONconfig2() {
 			confArray = new JSONArray();
 			try {
 				for (String id: idLegheAmmesse2) {
@@ -122,8 +139,11 @@ public class writeConfigFile {
 					
 				
 					JSONObject compData = (JSONObject) obj.get("competition");
+					JSONObject area = (JSONObject) obj.get("area");
+					String areaName = area.get("name").toString();
 					String comp = compData.get("name").toString();
 					String teams = obj.get("count").toString();
+					compObj.put("area", areaName);
 					compObj.put("count", teams);
 					compObj.put("competition", comp);
 					JSONArray squadre = (JSONArray) obj.get("teams");
@@ -149,5 +169,7 @@ public class writeConfigFile {
 	        } catch (IOException e) {
 	            e.printStackTrace();
 	        }
+			
+			return confArray.toJSONString();
 		}
 	}

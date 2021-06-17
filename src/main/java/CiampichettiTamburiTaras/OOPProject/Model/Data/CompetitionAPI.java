@@ -13,6 +13,8 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import CiampichettiTamburiTaras.OOPProject.Exceptions.WrongFilterValueException;
+
 public class CompetitionAPI {
 	
 	public CompetitionAPI () {
@@ -51,9 +53,37 @@ public class CompetitionAPI {
 		return obj;
 	}
 	
-	public int getCompetitionDuration () {
+	public JSONObject getCompetitionByPlan (String plan) throws WrongFilterValueException {
+		JSONObject obj = null;
+
+		if (plan != "TIER_ONE" && plan != "TIER_TWO" && plan != "TIER_THREE" && plan != "TIER_FOUR")
+			throw new WrongFilterValueException(plan + " non è un valore riconosciuto!");
+		try {
+
+			URLConnection openConnection = new URL("https://api.football-data.org/v2/competitions/?plan=" + plan).openConnection();
+			openConnection.addRequestProperty("X-Auth-Token", "d83eba6e4c5b47aeab76f99e35c2aef5");
+			InputStream in = openConnection.getInputStream();	
+
+			String data = "";
+			String line = "";
+
+			try {
+				InputStreamReader inR = new InputStreamReader( in );
+				BufferedReader buf = new BufferedReader( inR );
+
+				while ( ( line = buf.readLine() ) != null ) {
+					data+= line;
+				}
+			} finally {
+				in.close();
+			}
+
+			obj = (JSONObject) JSONValue.parseWithException(data);
+		}
+		catch(Exception e) {
+			System.out.print(e);
+		}
 		
-		
-		return (int) durataCampionato;
+		return obj;
 	}
 }
